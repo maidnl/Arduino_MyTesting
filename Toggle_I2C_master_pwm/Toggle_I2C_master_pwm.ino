@@ -15,12 +15,52 @@
 /* --- CONFIGURAZIONE --- */
 #define I2C_PWM_TASK_ms 1000
 #define I2C_MASTER_REQUEST_TASK_ms 1000
+#define DIGITAL_INPUT_TASK_ms 1000
+#define DIGITAL_OUTPUT_TASk_ms 500
 #define SWITCHING_TASK_ms 10000
 
 #include "atest_wire_config.h"
 
 uint8_t tx_buffer[TX_BUFFER_DIM];
 uint8_t rx_buffer[RX_BUFFER_DIM];
+
+typedef enum {
+  USE_TASK_I2C,
+  USE_TASK_PWM,
+  USE_TASK_DIGITAL_INPUT,
+  USE_TASK_DIGITAL_OUTPUT
+} TaskType_t;
+
+TaskType_t task_list[] = {
+    USE_TASK_I2C,           USE_TASK_DIGITAL_INPUT,  USE_TASK_I2C,
+    USE_TASK_PWM,           USE_TASK_DIGITAL_OUTPUT, USE_TASK_PWM,
+    USE_TASK_DIGITAL_OUTPUT};
+
+int task_list_num = sizeof(task_list) / sizeof(TaskType_t);
+
+int current_task_index = -1;
+
+int increment_current_task_index() {
+  current_task_index++;
+  if (current_task_index >= task_list_num) {
+    current_task_index = 0;
+  }
+  return current_task_index;
+}
+
+void log_current_task() {
+  if (task_list[current_task_index] == USE_TASK_I2C) {
+    alogln("[LOG]: Current task I2C");
+  } else if (task_list[current_task_index] == USE_TASK_PWM) {
+    alogln("[LOG]: Current task PWM");
+  } else if (task_list[current_task_index] == USE_TASK_DIGITAL_OUTPUT) {
+    alogln("[LOG]: Current task DIGITAL OUTPUT");
+  } else if (task_list[current_task_index] == USE_TASK_DIGITAL_INPUT) {
+    alogln("[LOG]: Current task DIGITAL INPUT");
+  } else {
+    alogln("[ERR]: Current task UNKNOWN !!!!");
+  }
+}
 
 static bool i2c_initialized = false;
 static bool i2c_active = true;
@@ -37,7 +77,7 @@ void setup() {
 void i2c_task() {
   static long start = millis();
 
-  if (i2c_active) {
+  if (task_list[current_task_index] == USE_TASK_I2C) {
 
     if (!i2c_initialized) {
       i2c_init<Wire_t>(WIRE, 0);
@@ -63,11 +103,60 @@ void i2c_task() {
   }
 }
 
-/* ______________________________________ Activate PWM on the same pin of I2C */
+void digital_input_task() {
+  static long start = millis();
+
+  if (task_list[current_task_index] == USE_TASK_DIGITAL_INPUT) {
+    if (millis() - start > DIGITAL_INPUT_TASK_ms) {
+      start = millis();
+      alogln("[LOG]: Reading digital pins");
+
+      pinMode(ARDUINO_WIRE_SCL_PIN, INPUT);
+      pinMode(ARDUINO_WIRE_SDA_PIN, INPUT);
+
+      auto status = digitalRead(ARDUINO_WIRE_SDA_PIN);
+      auto status1 = digitalRead(ARDUINO_WIRE_SCL_PIN);
+
+      alogln("[LOG]: pin SDA (9) is %s", (status == HIGH) ? "HIGH" : "LOW");
+      alogln("[LOG]: pin SCL (8) is %s", (status1 == HIGH) ? "HIGH" : "LOW");
+    }
+  }
+}
+
+void digital_output_task() {
+  if (task_list[current_task_index] == USE_TASK_DIGITAL_OUTPUT) {
+    static long start = millis();
+    static bool status = true;
+    if (millis() - start > DIGITAL_OUTPUT_TASk_ms) {
+      start = millis();
+      alogln("[LOG]: Setting digital pins");
+
+      pinMode(ARDUINO_WIRE_SCL_PIN, OUTPUT);
+      pinMode(ARDUINO_WIRE_SDA_PIN, OUTPUT);
+
+      if (status) {
+        status = false;
+        alogln("[LOG]: setting pin SDA (9) HIGH");
+        alogln("[LOG]: setting pin SCL (8) HIGH");
+        digitalWrite(ARDUINO_WIRE_SCL_PIN, HIGH);
+        digitalWrite(ARDUINO_WIRE_SDA_PIN, HIGH);
+      } else {
+        status = true;
+        alogln("[LOG]: setting pin SDA (9) LOW");
+        alogln("[LOG]: setting pin SCL (8) LOW");
+        digitalWrite(ARDUINO_WIRE_SCL_PIN, LOW);
+        digitalWrite(ARDUINO_WIRE_SDA_PIN, LOW);
+      }
+    }
+  }
+}
+
+/* ______________________________________ Activate PWM on the same pin of I2C
+ */
 void pwm_task() {
   static long start = millis();
 
-  if (!i2c_active) {
+  if (task_list[current_task_index] == USE_TASK_PWM) {
     if (i2c_initialized) {
       alogln("[LOG]: Calling wire.end()");
       WIRE.end();
@@ -78,30 +167,31 @@ void pwm_task() {
       start = millis();
       alogln("[LOG]: Activating PWM");
       analogWrite(ARDUINO_WIRE_SDA_PIN, 50);
-      // analogWrite(ARDUINO_WIRE_SCL_PIN, 100);
+      analogWrite(ARDUINO_WIRE_SCL_PIN, 100);
     }
   }
 }
 
-/* activate either one of the 2 other tasks i2c or pwm with a certain period */
+/* activate either one of the 2 other tasks i2c or pwm with a certain period
+ */
 void switch_task() {
   static long start = millis();
 
   if (millis() - start > SWITCHING_TASK_ms) {
     start = millis();
-    if (!i2c_active) {
-      alogln("[LOG]: ACTIVATE I2C TASK");
-      i2c_active = true;
-    } else {
-      alogln("[LOG]: ACTIVATE PWM TASK");
-      i2c_active = false;
-    }
+    increment_current_task_index();
+    log_current_task();
+    /* this forces i2c task to re initialize I2C always */
+    i2c_initialized = false;
   }
 }
 
-/* ____________________________________________________________________loop() */
+/* ____________________________________________________________________loop()
+ */
 void loop() {
   switch_task();
   i2c_task();
   pwm_task();
+  digital_output_task();
+  digital_input_task();
 }
