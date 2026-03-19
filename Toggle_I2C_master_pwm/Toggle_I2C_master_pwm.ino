@@ -63,7 +63,7 @@ void log_current_task() {
 }
 
 static bool i2c_initialized = false;
-static bool i2c_active = true;
+
 
 /* ___________________________________________________________________setup() */
 void setup() {
