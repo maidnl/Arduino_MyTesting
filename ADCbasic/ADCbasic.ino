@@ -11,6 +11,8 @@
    NOTES:                                                                     */
 /* -------------------------------------------------------------------------- */
 
+/* TEST "pure" ADC pins */
+
 #include "atestlib.h"
 /* ___________________________________________________________________setup() */
 void setup() {
@@ -22,7 +24,16 @@ void setup() {
 
 /* ____________________________________________________________________loop() */
 void loop() {
-  int v = analogRead(A0);
-  alogln("Analog value: %i", v);
+  int v = analogRead(A8);
+  alogln("A8 Analog value: %i", v);
+
+  v = analogRead(A9);
+  alogln("A9 Analog value: %i", v);
+
+  v = analogRead(A10);
+  alogln("A10 Analog value: %i", v);
+
+  v = analogRead(A11);
+  alogln("A11 Analog value: %i", v);
   delay(1000);
 }
