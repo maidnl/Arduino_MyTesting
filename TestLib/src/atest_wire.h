@@ -3,6 +3,9 @@
 
 #include "atest_log.h"
 #include <cstdint>
+void i2c_set_initialized(bool v);
+void i2c_initialize();
+void i2c_deinitialize();
 
 template <class T> int i2c_init(T &wire, uint8_t add = 0, bool log = true) {
   if (add == 0) {
@@ -27,8 +30,8 @@ template <class T> int i2c_init(T &wire, uint8_t add = 0, bool log = true) {
  * @param buf: a pointer to an uint8_t buffer containing the data to be sent
  * @param rx: a buffer to put the slave answer into ( if nullptr no answer is
  * expected
- * @param rx_dim: dimension of the rx buffer (the number of bytes expected to be
- * reading -> the buffer must have at least the same dimension)
+ * @param rx_dim: dimension of the rx buffer (the number of bytes expected to
+ * be reading -> the buffer must have at least the same dimension)
  * @param log: a boolean specifying if the function must output the log or not
  */
 

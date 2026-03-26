@@ -136,7 +136,6 @@ void task_set_pins() {
 /* ___________read the single pin used_adc and print the value on the serial */
 void task_read_analog() {
   static unsigned long start = millis();
-  static bool high = true;
   if (millis() - start > READ_ANALOG_ms) {
     start = millis();
     int ar = analogRead(used_adc);
