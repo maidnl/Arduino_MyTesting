@@ -70,8 +70,8 @@ void digital_output_task() {
 
   if (execute_task(USE_TASK_DIGITAL_OUTPUT, time, AT_DIGITAL_OUT_TASK_ms)) {
     alogln("[LOG]: deinitialize digital pins");
-    i2c_deinitialize();
-    // i2c_set_initialized(false);
+    // i2c_deinitialize();
+    //  i2c_set_initialized(false);
 
     if (pin_mode_applied == false) {
       alogln("[LOG]: Setting digital pins");
@@ -79,6 +79,7 @@ void digital_output_task() {
       pinMode(AT_WIRE_SDA_PIN, OUTPUT);
       pinMode(AT_WIRE_SCL_PIN, OUTPUT);
       pin_mode_applied = true;
+      delay(5000);
     }
 
     if (status) {
