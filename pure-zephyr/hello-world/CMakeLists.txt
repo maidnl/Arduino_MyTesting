@@ -1,0 +1,11 @@
+# Minimum version of CMake required
+cmake_minimum_required(VERSION 3.20)
+
+# Find the Zephyr package
+find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
+
+# Define your project
+project(my_sensor_app)
+
+# Add your source files
+target_sources(app PRIVATE src/main.c)

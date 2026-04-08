@@ -1,0 +1,21 @@
+/ {
+	chosen {
+		zephyr,console = &cdc_acm_uart0;
+		zephyr,shell-uart = &cdc_acm_uart0;
+	};
+};
+
+&zephyr_udc0 {
+	cdc_acm_uart0: cdc_acm_uart0 {
+		compatible = "zephyr,cdc-acm-uart";
+	};
+};
+
+
+&spi5 {
+	status = "okay";
+	pinctrl-0 = <&spi5_sck_ph6
+		     &spi5_miso_pj11 &spi5_mosi_pj10>;
+	pinctrl-1 = <&analog_ph6 &analog_pj11 &analog_pj10>;
+	pinctrl-names = "default", "sleep";
+};

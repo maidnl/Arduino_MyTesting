@@ -80,6 +80,30 @@ void printVersion(unsigned char M, unsigned char m, unsigned char r) {
    Serial.println();
 }
 
+typedef enum {
+   NOT_UPDATABLE,
+   UPDATABLE,
+   UPDATED_DECLINED
+} UpdateStatus_t;
+
+static UpdateStatus_t update_status[OPTA_CONTROLLER_MAX_EXPANSION_NUM];
+
+bool update_finished() {
+   uint8_t n = OptaController.getExpansionNum();
+   for(uint8_t i = 0; i < n; i++) {
+      if(update_status[i] == UPDATABLE) {
+         return false;
+      }
+   }
+   return true;
+}
+
+void init_update_status() {
+   for(uint8_t i = 0; i < OPTA_CONTROLLER_MAX_EXPANSION_NUM; i++) {
+      update_status[i] = UPDATABLE;
+   }
+}
+
 
 static uint8_t exp_num = 0;
 
@@ -168,10 +192,23 @@ bool check_expansions() {
 
 void updateTask() {
    static uint8_t current_expansion = 0;
+   
    static unsigned long start = millis();
    if(millis() - start > 500) {
       start = millis();
-      if(check_expansions(current_expansion)) {
+      if(update_finished()) {
+         Serial.println("FW UPDATE COMPLETE!");
+
+         for(uint8_t i = 0; i < OptaController.getExpansionNum(); i++) {
+            if(update_status[i] == UPDATED_DECLINED) {
+               Serial.print(" Updated was skipped for expansion: ");
+               Serial.println(i);
+            }
+         }
+
+         Serial.println("If you wish to perform the update againg, reset the Opta Controller");
+         delay(1500);
+      } else if(check_expansions() && current_expansion < OPTA_CONTROLLER_MAX_EXPANSION_NUM) {
             if(isUpdatable(current_expansion)) {
                unsigned char *fw = nullptr;
                uint32_t sz = 0;
@@ -186,7 +223,7 @@ void updateTask() {
                }
                
                if(sz == 0 || fw == nullptr) {
-                  continue;
+                  return;
                }
 
                Serial.print("REBOOTING expansion: ");
@@ -195,7 +232,7 @@ void updateTask() {
                   Serial.println("BOSSA correctly initialized");
                   #ifdef ASK_FOR_FW_UPDATE
                   String msg = "Expansion ";
-                  msg += String(i);
+                  msg += String(current_expansion);
                   msg += " will be now updated... Proceed? [Y/n]";
 
                   if(ask_for_confirmation(msg)) {
@@ -203,18 +240,21 @@ void updateTask() {
                      if(BOSSA.flash(fw,sz)) {
                         Serial.println("UPDATE successfully performed... reset board");
                         BOSSA.reset();
+                        update_status[current_expansion] = NOT_UPDATABLE;
                      }
                      else {
                         BOSSA.reset();
                      }
                   }
                   else {
+                     update_status[current_expansion] = UPDATED_DECLINED;
                      Serial.println("FW will NOT be updated!");
                      BOSSA.reset();
                     
                   }
                   #else
                   if(BOSSA.flash(fw,sz)) {
+                     update_status[current_expansion] = NOT_UPDATABLE;
                      Serial.println("UPDATE successfully performed... reset board");
                      BOSSA.reset();
                   }
@@ -225,6 +265,13 @@ void updateTask() {
                   BOSSA.reset();
                }
             }
+            else {
+               update_status[current_expansion] = NOT_UPDATABLE;
+            }
+         current_expansion++;
+         if(current_expansion >= exp_num) {
+            current_expansion = 0;
+         }
       } ////
       else {
          Serial.println("[ERROR]: Wrong number of expansions or invalid type");
@@ -246,6 +293,8 @@ void updateTask() {
 /* -------------------------------------------------------------------------- */
 void setup() {
 /* -------------------------------------------------------------------------- */    
+  init_update_status();
+  
   Serial.begin(115200);
   while(!Serial) {
   }
@@ -262,7 +311,7 @@ void setup() {
 
   exp_num = OptaController.getExpansionNum();
 
-  Serial.prin("- Found ");
+  Serial.print("- Found ");
   Serial.print(exp_num);
   Serial.println(" expansions");
 
@@ -276,16 +325,18 @@ void setup() {
       }
   }
 
+  while(Serial.available()) {
+      Serial.read();
+  }
+
 
   String msg = "Is the numbe of detected expansions correct? [Y/N]";
   if(ask_for_confirmation(msg) == false) {
-      Serial.println("[ERROR]: the number of detected expansion is not correct");
-      Serial.println("         Please check the connections");
-      Serial.println("         Are all the expansion correctly powered with DC power (12/24V)?");
-      Serial.println();
-      
-
       while(1) {
+         Serial.println("[ERROR]: the number of detected expansion is not correct");
+         Serial.println("         Please check the connections");
+         Serial.println("         Are all the expansion correctly powered with DC power (12/24V)?");
+         Serial.println();
          Serial.println("[!!!]: The FW Update will NOT be executed.");
          Serial.println("       Check connections and power then reset the Opta Controller to try again");
          Serial.println();

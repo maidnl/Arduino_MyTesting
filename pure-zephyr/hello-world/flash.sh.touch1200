@@ -1,0 +1,36 @@
+#!/bin/bash
+
+PORT="/dev/ttyACM0"
+
+echo "Checking for port $PORT..."
+
+# Step 1: Check if the character device exists
+# # The '-c' flag checks if the path exists and is a character special file
+# (like a serial port)
+ if [ ! -c "$PORT" ]; then
+     echo "Error: Device $PORT not found."
+         echo "Please make sure your device is plugged in and recognized by the
+         system."
+             exit 1
+             fi
+
+             echo "Performing 1200-bps touch reset on $PORT..."
+
+# Step 2: Use stty to set the baud rate to 1200
+# The '-F' flag specifies the file (device) to configure
+# Setting the rate to 1200 and immediately closing the connection triggers the reset
+stty -F "$PORT" 1200 
+
+# Step 3: Check if the previous command was successful
+# '$?' holds the exit status of the last executed command (0 means success)
+if [ $? -eq 0 ]; then
+   echo "Reset signal sent successfully!"
+   echo "Your device should now be rebooting into bootloader mode."
+else
+   echo "Error: Failed to configure the serial port."
+   echo "Hint: You might not have the correctpermissions. Try running this script"
+   echo "with 'sudo' or ensure your user is added to the 'dialout' or 'uucp' group."
+   exit 1
+fi
+
+
