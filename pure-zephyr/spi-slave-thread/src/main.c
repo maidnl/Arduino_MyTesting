@@ -1,11 +1,11 @@
 #include "zephyr/sys/printk.h"
+#include "zephyr/sys/time_units.h"
 #include <zephyr/device.h>
 #include <zephyr/drivers/spi.h>
 #include <zephyr/drivers/uart.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/usb/usb_device.h>
-
 LOG_MODULE_REGISTER(spi_slave_thread, LOG_LEVEL_INF);
 
 /* 1. Point to your spi5 device */
@@ -13,13 +13,12 @@ LOG_MODULE_REGISTER(spi_slave_thread, LOG_LEVEL_INF);
 static const struct device *spi_dev = DEVICE_DT_GET(SPI_SLAVE_NODE);
 
 /* Buffers for communication */
-static uint8_t rx_buffer[16];
-static uint8_t tx_buffer[16] = "Hello Master!";
+static uint8_t rx_buffer[32] __aligned(32);
+static uint8_t tx_buffer[32] __aligned(32) = "Hello Master!";
 
 /* Thread configuration parameters */
-#define SPI_THREAD_STACK_SIZE 1024
+#define SPI_THREAD_STACK_SIZE 4096
 #define SPI_THREAD_PRIORITY 5
-
 /* 2. The Background Thread Entry Point */
 void spi_slave_entry_point(void *p1, void *p2, void *p3) {
   if (!device_is_ready(spi_dev)) {
@@ -33,19 +32,22 @@ void spi_slave_entry_point(void *p1, void *p2, void *p3) {
       .slave = 0,
   };
 
-  struct spi_buf tx_buf = {.buf = tx_buffer, .len = sizeof(tx_buffer)};
+  struct spi_buf tx_buf = {.buf = tx_buffer, .len = 16};
   struct spi_buf_set tx_bufs = {.buffers = &tx_buf, .count = 1};
 
-  struct spi_buf rx_buf = {.buf = rx_buffer, .len = sizeof(rx_buffer)};
+  struct spi_buf rx_buf = {.buf = rx_buffer, .len = 16};
   struct spi_buf_set rx_bufs = {.buffers = &rx_buf, .count = 1};
 
   LOG_INF("Background Thread: SPI Slave waiting for Master...");
-
+  k_sleep(K_MSEC(5000));
+  LOG_INF("Background Thread: before while 1");
   while (1) {
     /* * This is a BLOCKING call.
      * The background thread will stop here and wait for the Arduino Giga.
      * It does NOT block the main thread!
      */
+
+    // #ifdef PIPPO
     int ret = spi_transceive(spi_dev, &config, &tx_bufs, &rx_bufs);
 
     if (ret == 0) {
@@ -63,11 +65,16 @@ void spi_slave_entry_point(void *p1, void *p2, void *p3) {
       k_msleep(100);
     }
   }
+
+  // #endif
+
+  printk("Thread...\n");
+  k_sleep(K_MSEC(1000));
 }
 
 /* 3. Define and automatically start the background thread */
 K_THREAD_DEFINE(spi_slave_tid, SPI_THREAD_STACK_SIZE, spi_slave_entry_point,
-                NULL, NULL, NULL, SPI_THREAD_PRIORITY, 0, 0);
+                NULL, NULL, NULL, SPI_THREAD_PRIORITY, 0, SYS_FOREVER_MS);
 
 /* 4. Your Main Application */
 int main(void) {
@@ -91,12 +98,14 @@ int main(void) {
   }
   printk("pppo");
   LOG_INF("Main Thread: Running free! count = %i", count);
-
+  LOG_INF("Starting SPI background thread...");
+  k_thread_start(spi_slave_tid);
   while (1) {
     /* * Because the SPI work is happening in the background thread,
      * this main loop is completely unblocked.
      */
     LOG_INF("Main Thread: Doing other work...");
+    printk("ppppppppppppppppppp\n");
 
     /* Simulate doing some other work */
     k_msleep(2000);

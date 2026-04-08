@@ -10,12 +10,38 @@
 		compatible = "zephyr,cdc-acm-uart";
 	};
 };
-
+&pinctrl {
+	spi5_sck_slave: spi5_sck_slave {
+		pinmux = <STM32_PINMUX('H', 6, AF5)>;
+		bias-pull-down; /* Stops the antenna effect! */
+	};
+	spi5_miso_slave: spi5_miso_slave {
+		pinmux = <STM32_PINMUX('J', 11, AF5)>;
+		bias-pull-down;
+	};
+	spi5_mosi_slave: spi5_mosi_slave {
+		pinmux = <STM32_PINMUX('J', 10, AF5)>;
+		bias-pull-down;
+	};
+	spi5_nss_slave: spi5_nss_slave {
+		pinmux = <STM32_PINMUX('K', 1, AF5)>;
+		bias-pull-down;
+	};
+};
 
 &spi5 {
 	status = "okay";
-	pinctrl-0 = <&spi5_sck_ph6
-		     &spi5_miso_pj11 &spi5_mosi_pj10>;
-	pinctrl-1 = <&analog_ph6 &analog_pj11 &analog_pj10>;
+    /* 2. Point to our newly created individual pin nodes */
+	pinctrl-0 = <&spi5_sck_slave &spi5_miso_slave &spi5_mosi_slave &spi5_nss_slave>; 
+	pinctrl-1 = <&analog_ph6 &analog_pj11 &analog_pj10 &analog_pk1>;
 	pinctrl-names = "default", "sleep";
 };
+/*
+&spi5 {
+	status = "okay";
+	pinctrl-0 = <&spi5_sck_ph6
+		     &spi5_miso_pj11 &spi5_mosi_pj10 &spi5_nss_pk1>;
+	pinctrl-1 = <&analog_ph6 &analog_pj11 &analog_pj10 &analog_pk1>;
+	pinctrl-names = "default", "sleep";
+};
+*/
