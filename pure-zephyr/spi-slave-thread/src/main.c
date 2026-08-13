@@ -17,9 +17,9 @@ static uint8_t rx_buffer[32] __aligned(32);
 static uint8_t tx_buffer[32] __aligned(32) = "Hello Master!";
 
 /* Thread configuration parameters */
-#define SPI_THREAD_STACK_SIZE 4096
+#define SPI_THREAD_STACK_SIZE 1024
 #define SPI_THREAD_PRIORITY 5
-/* 2. The Background Thread Entry Point */
+
 void spi_slave_entry_point(void *p1, void *p2, void *p3) {
   if (!device_is_ready(spi_dev)) {
     LOG_ERR("SPI slave device not ready in background thread");
@@ -39,37 +39,22 @@ void spi_slave_entry_point(void *p1, void *p2, void *p3) {
   struct spi_buf_set rx_bufs = {.buffers = &rx_buf, .count = 1};
 
   LOG_INF("Background Thread: SPI Slave waiting for Master...");
-  k_sleep(K_MSEC(5000));
-  LOG_INF("Background Thread: before while 1");
   while (1) {
-    /* * This is a BLOCKING call.
-     * The background thread will stop here and wait for the Arduino Giga.
-     * It does NOT block the main thread!
-     */
-
-    // #ifdef PIPPO
+    memset(rx_buffer, 0, sizeof(rx_buffer));
     int ret = spi_transceive(spi_dev, &config, &tx_bufs, &rx_bufs);
 
-    if (ret == 0) {
+    if (ret >= 0) {
+      LOG_INF("Success! Received %d bytes.", ret);
       /* Transfer is complete! Process the data. */
       LOG_HEXDUMP_INF(rx_buffer, sizeof(rx_buffer),
                       "Received from Arduino Giga:");
 
-      /* * Optional: If you need to send this data to the main thread,
-       * you could use a Zephyr Message Queue (k_msgq) here.
-       */
     } else {
-      LOG_ERR("spi_transceive failed: %d", ret);
-      /* Sleep briefly to prevent an infinite loop of errors from spamming the
-       * logs */
-      k_msleep(100);
+      LOG_ERR("SPI Error: %d. Resetting driver...", ret);
+      spi_release(spi_dev, &config);
+      k_msleep(50);
     }
   }
-
-  // #endif
-
-  printk("Thread...\n");
-  k_sleep(K_MSEC(1000));
 }
 
 /* 3. Define and automatically start the background thread */
@@ -96,7 +81,6 @@ int main(void) {
     count++;
     k_sleep(K_MSEC(100));
   }
-  printk("pppo");
   LOG_INF("Main Thread: Running free! count = %i", count);
   LOG_INF("Starting SPI background thread...");
   k_thread_start(spi_slave_tid);
@@ -105,7 +89,6 @@ int main(void) {
      * this main loop is completely unblocked.
      */
     LOG_INF("Main Thread: Doing other work...");
-    printk("ppppppppppppppppppp\n");
 
     /* Simulate doing some other work */
     k_msleep(2000);

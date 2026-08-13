@@ -34,8 +34,19 @@ void setup() {
   }
 }
 
+void serial_print() {
+  static unsigned long t = millis();
+  if(millis() - t > 2000) {
+    t = millis();
+    Serial.println("loop...");
+    printk("loop... - uart\n");
+  }
+}
+
+
 /* ____________________________________________________________________loop() */
 void loop() {
+  serial_print();
   static int i = 0;
 
   analogWrite(DAC0, _sinewave[i]);

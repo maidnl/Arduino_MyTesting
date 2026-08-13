@@ -15,8 +15,8 @@ LOG_MODULE_REGISTER(spi_slave_async, LOG_LEVEL_INF);
 static const struct device *spi_dev = DEVICE_DT_GET(SPI_SLAVE_NODE);
 
 /* Buffers for communication */
-static uint8_t rx_buffer[16];
-static uint8_t tx_buffer[16] = "Hello Master!";
+__aligned(32) static uint8_t rx_buffer[32];
+__aligned(32) static uint8_t tx_buffer[32] = "Hello Master!";
 
 /* Signal to notify the main thread when the transfer is done */
 static struct k_poll_signal async_sig = K_POLL_SIGNAL_INITIALIZER(async_sig);
@@ -65,11 +65,13 @@ int main(void) {
   struct spi_buf_set rx_bufs = {.buffers = &rx_buf, .count = 1};
 
   LOG_INF("SPI Slave initialized. Starting first async read...");
+  int ret = 0;
 
+  k_sleep(K_SECONDS(5));
   k_poll_signal_reset(&async_sig);
   /* 1. Kick off the FIRST asynchronous transceive before the loop */
-  int ret = spi_transceive_cb(spi_dev, &config, &tx_bufs, &rx_bufs,
-                              spi_async_callback, NULL);
+  ret = spi_transceive_cb(spi_dev, &config, &tx_bufs, &rx_bufs,
+                          spi_async_callback, NULL);
   if (ret < 0) {
     LOG_ERR("spi_transceive_cb failed: %d", ret);
     return 0;

@@ -24,7 +24,33 @@ void setup() {
 
 /* ____________________________________________________________________loop() */
 void loop() {
-  int v = analogRead(A8);
+  alogln("");
+
+  int v = analogRead(A0);
+  alogln("A0 Analog value: %i", v);
+
+  v = analogRead(A1);
+  alogln("A1 Analog value: %i", v);
+
+  v = analogRead(A2);
+  alogln("A2 Analog value: %i", v);
+
+  v = analogRead(A3);
+  alogln("A3 Analog value: %i", v);
+
+  v = analogRead(A4);
+  alogln("A4 Analog value: %i", v);
+
+  v = analogRead(A5);
+  alogln("A5 Analog value: %i", v);
+
+  v = analogRead(A6);
+  alogln("A6 Analog value: %i", v);
+
+  v = analogRead(A7);
+  alogln("A7 Analog value: %i", v);
+/*
+  v = analogRead(A8);
   alogln("A8 Analog value: %i", v);
 
   v = analogRead(A9);
@@ -35,5 +61,6 @@ void loop() {
 
   v = analogRead(A11);
   alogln("A11 Analog value: %i", v);
+  */
   delay(1000);
 }

@@ -1,3 +1,5 @@
+#include <zephyr/dt-bindings/dma/stm32_dma.h>
+
 / {
 	chosen {
 		zephyr,console = &cdc_acm_uart0;
@@ -10,7 +12,17 @@
 		compatible = "zephyr,cdc-acm-uart";
 	};
 };
+&dma1 {
+	status = "okay";
+};
 
+&dma2 {
+	status = "okay";
+};
+
+&dmamux1 {
+	status = "okay";
+};
 
 &spi5 {
 	status = "okay";
@@ -18,4 +30,9 @@
 		     &spi5_miso_pj11 &spi5_mosi_pj10>;
 	pinctrl-1 = <&analog_ph6 &analog_pj11 &analog_pj10>;
 	pinctrl-names = "default", "sleep";
+
+
+	dmas = <&dmamux1 0 86 (STM32_DMA_PERIPH_TX | STM32_DMA_PRIORITY_HIGH)>,
+           <&dmamux1 1 85 (STM32_DMA_PERIPH_RX | STM32_DMA_PRIORITY_HIGH)>;
+    dma-names = "tx", "rx";
 };

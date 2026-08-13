@@ -3,7 +3,7 @@
 
 typedef arduino::ZephyrI2C Wire_t;
 
-#define WIRE Wire2
+#define WIRE Wire
 
 #define RX_BUFFER_DIM 10
 #define TX_BUFFER_DIM 10
