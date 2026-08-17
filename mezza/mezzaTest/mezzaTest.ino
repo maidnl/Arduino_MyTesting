@@ -34,5 +34,6 @@ void setup() {
 void loop() {
   // mezza_test_userbutton();
   // mezza_test_leds();
-  delay(100);
+  mezza_test_sdcard();
+  delay(2);
 }

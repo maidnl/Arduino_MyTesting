@@ -1,6 +1,11 @@
 #ifndef MEZZA_TEST_SDCARD_TEST
 #define MEZZA_TEST_SDCARD_TEST
 
+#define SD_DELAY_MS 500
+#define SD_CARD_WAIT_FOR_CARD_DETECTION_ms 500
+#define SD_WRITE_DIM 64
+#define SD_READ_DIM 64
+
 #include <Arduino.h>
 #include <ff.h>
 #include <stm32_ll_rcc.h>
