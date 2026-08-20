@@ -13,6 +13,7 @@
 
 #include "leds.h"
 #include "relays.h"
+#include "rs485.h"
 #include "sdcard.h"
 #include "user_button.h"
 
@@ -25,8 +26,9 @@ void setup() {
   Serial.println("---- TEST SKETCH FOR MEZZA ----");
   // mezza_test_init_userbutton();
   // mezza_test_init_leds();
-  mezza_test_init_sdcard();
+  // mezza_test_init_sdcard();
   // mezza_test_relays();
+  mezza_test_init_rs485();
 }
 
 /* ____________________________________________________________________loop()
@@ -34,6 +36,8 @@ void setup() {
 void loop() {
   // mezza_test_userbutton();
   // mezza_test_leds();
-  mezza_test_sdcard();
+  // mezza_test_sdcard();
+  mezza_test_rs485();
+
   delay(2);
 }

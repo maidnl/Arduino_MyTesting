@@ -160,6 +160,7 @@ void mezza_test_sdcard() {
   static unsigned long t = 0;
   bool go_on = true;
   if (millis() - t > SD_DELAY_MS) {
+    t = millis();
     if (tf1) {
       tf1 = false;
       tf = test_file1;
